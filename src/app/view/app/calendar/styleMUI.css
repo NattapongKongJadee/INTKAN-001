@@ -1,0 +1,32 @@
+#cancel {
+  color: #5d87ff;
+  background-color: #ecf2ff;
+  transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    border-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+#cancel:hover {
+  background-color: #5d87ff;
+  color: white;
+}
+
+#addAndUpdate {
+  /* color: #5d87ff; */
+  background-color: #5d87ff;
+  transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    border-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+    color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+#addAndUpdate:disabled {
+  color: #fffff0;
+  background-color: #d3d3d3;
+}
+
+#delete {
+  background-color: #fa896b;
+  color: white;
+}

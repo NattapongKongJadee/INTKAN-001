@@ -4,8 +4,10 @@
 
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --primary-color: #1d4ed8;
+  --secondary-color: #38bdf8;
+  --accent-color: #a5b4fc;
+  --orange-color: #fdba74;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,6 +16,12 @@
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
   }
+}
+@font-face {
+  font-family: "BaiJamjuree";
+  src: url("../../public/BaiJamjuree-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
 }
 
 body {
@@ -24,6 +32,57 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+aside {
+  flex-shrink: 0;
+}
+
+@keyframes vibrate {
+  0%,
+  100% {
+    transform: translate(0);
+  }
+  10% {
+    transform: translate(-1px, 1px);
+  }
+  20% {
+    transform: translate(-1px, -1px);
+  }
+  30% {
+    transform: translate(1px, 1px);
+  }
+  40% {
+    transform: translate(1px, -1px);
+  }
+  50% {
+    transform: translate(0px, 1px);
+  }
+  60% {
+    transform: translate(1px, 1px);
+  }
+  70% {
+    transform: translate(-1px, -1px);
+  }
+  80% {
+    transform: translate(-1px, 1px);
+  }
+  90% {
+    transform: translate(1px, 1px);
+  }
+}
+.plain-input {
+  font-family: "BaiJamjuree", sans-serif; /* Use the custom font */
+  color: darkorange;
+  background: none; /* Reset specific properties if needed */
+  margin-left: 12px; /* Reset specific properties if needed */
+  padding: 0; /* Reset specific properties if needed */
+  border: none; /* Make sure no border is applied */
+  outline: none; /* Optional: remove focus outline */
+}
+
+.strikethrough {
+  text-decoration: line-through;
 }
 
 @layer utilities {

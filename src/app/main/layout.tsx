@@ -29,7 +29,7 @@ export default function SideBarMain({ children }: Props) {
             active
           />
         </Link>
-        <Link href={"/main/job-management"}>
+        <Link href={"/main/image-database"}>
           <SideBartItem
             icon={<AiFillPicture size={20} />}
             text="ฐานข้อมูลรูปภาพ"

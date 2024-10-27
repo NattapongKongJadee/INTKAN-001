@@ -1,18 +1,14 @@
-// import SideBarMain from "../layout";
 "use client";
-import BigCalendar from "@/app/view/app/calendar/calendar";
-import CardPostIt from "@/app/view/app/post-it/post-it";
-// import { useState } from "react";
+import BigCalendar from "@/app/components/Calendar/calendar";
+import CardPostIt from "@/app/components/Post-it/post-it";
 import { IoIosAddCircle } from "react-icons/io";
 import { ToastContainer, toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 import "react-toastify/dist/ReactToastify.css";
 import { useLocalStorage } from "@/app/components/useLocal";
-import { useState } from "react";
-import { useModal } from "@dopt/react-modal/hooks";
-// import Checklist, { useChecklist } from '@dopt/react-checklist';
-import Checklist, { useChecklist } from "@dopt/react-checklist";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Box,
   Button,
@@ -74,16 +70,9 @@ export default function Planner() {
       notifyPageExceeed();
     }
   };
-  const handleChangeBox = (e: any, i: any) => {
-    const inputData = [...boxes];
-    inputData[i] = e.target.value;
-  };
 
   const handleDeleteBox = (i: any) => {
     handleOpenDelete();
-    // const deleteBoxes = [...boxes];
-    // deleteBoxes.splice(i, 1);
-    // setBoxes(deleteBoxes);
   };
 
   const handleConfirmDeleteBox = (i: any) => {
@@ -101,12 +90,12 @@ export default function Planner() {
     setJobHeader("");
   };
 
-  const notifyPageExceeed = () => toast.error("เพิ่มกระดาษได้มากสุด 3 แผ่น");
+  const notifyPageExceeed = () => toast.error("เพิ่มกระดาษได้สูงสุด 3 แผ่น");
   return (
     // <SideBarMain>
     <div className="flex flex-row h-screen w-[90vw]">
       <div className="flex row w-[60vw] mx-4 my-4 p-4 bg-neutral-100  rounded-lg shadow-xl">
-        <BigCalendar calendarHeight="80vh" calendarWidth="50vw">
+        <BigCalendar calendarHeight="75svh" calendarWidth="50vw">
           {" "}
         </BigCalendar>
       </div>
@@ -137,9 +126,9 @@ export default function Planner() {
           pauseOnHover
           theme="colored"
         />
-        <div className="flex flex-col items-center m-auto">
+        <div className="flex flex-col items-center m-auto ">
           {boxes.map((data, i) => (
-            <div className="relative  mb-4 ">
+            <div className="relative  mb-4">
               <AnimatePresence>
                 <motion.div
                   key={data.id}

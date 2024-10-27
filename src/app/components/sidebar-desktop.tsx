@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { FaChevronRight, FaChevronLeft } from "react-icons/fa6";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import logoITK from "../../../public/logo-itk.png";
 // import as Logo from
 
 interface SideBarDesktopProps {
@@ -32,17 +33,17 @@ export function SideBarDesktop({ children }: SideBarDesktopProps) {
   return (
     <aside style={asideStyle}>
       <nav className="h-full flex flex-col  border-r shadow-sm">
-        <div className="p-4 pb-2 flex justify-between items-center">
+        <div className="p-4 pb-2 flex justify-center items-center">
           <img
-            src="/logoipsum.svg"
+            src={logoITK.src}
             className={`overflow-hidden transition-all ${
-              expanded ? "w-32" : "w-0"
+              expanded ? "w-24" : "w-0"
             }`}
             alt=""
           />
           <button
             onClick={() => setExpanded((curr) => !curr)}
-            className="p-1.5 rounded-lg bg-sky-400 hover:bg-red-400"
+            className="ml-auto p-1.5 rounded-lg bg-sky-400 hover:bg-red-400"
           >
             {expanded ? <FaChevronLeft /> : <FaChevronRight />}
           </button>

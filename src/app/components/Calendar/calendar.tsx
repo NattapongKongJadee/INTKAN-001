@@ -19,13 +19,16 @@ import Events from "./EventData";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./Calendar.css";
 import "./styleMUI.css";
-import PageContainer from "@/app/components/container/PageContainer";
+import PageContainer from "@/app/components/Container/PageContainer";
 import { IconCheck } from "@tabler/icons-react";
-import BlankCard from "@/app/components/bankcard/BankCard";
-import Breadcrumb from "@/app/components/breadcumb/Breadcrumb";
+import BlankCard from "@/app/components/BankCard/BankCard";
+import Breadcrumb from "@/app/components/Breadcumb/Breadcrumb";
 import { RiveDemo } from "@/app/components/robotITK";
+import "moment/locale/th"; // Import Thai locale for moment.js
 
-moment.locale("en-GB");
+// moment.locale("en-GB");
+moment.locale("th");
+
 const localizer = momentLocalizer(moment);
 
 type EvType = {

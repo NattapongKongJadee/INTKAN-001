@@ -59,22 +59,12 @@ const CardPostIt = ({ title, description, boxColor, handleDelete }: any) => {
     setEditngLabel(event.target.value);
   };
 
-  // const handleLabelSubmit = (id: number) => {
-  //   setCheckBox(
-  //     checkedBox.map((checkbox) =>
-  //       checkbox.id === id ? { ...checkbox, isEditing: false } : checkbox
-  //     )
-  //   );
-  // };
-
   const handleLabelSubmit = (id: number) => {
-    // if (!document.activeElement?.classList.contains("delete-button")) {
     setCheckBox(
       checkedBox.map((checkbox) =>
         checkbox.id === id ? { ...checkbox, isEditing: false } : checkbox
       )
     );
-    // }
   };
 
   const handleDeleteEachCheckBox = (id: number) => {
@@ -93,7 +83,7 @@ const CardPostIt = ({ title, description, boxColor, handleDelete }: any) => {
   };
 
   return (
-    <div className="relative m-auto">
+    <div className="relative md:w-450 h-150 m-auto">
       <Card
         sx={{
           width: 600,
@@ -143,14 +133,14 @@ const CardPostIt = ({ title, description, boxColor, handleDelete }: any) => {
                   )}
                 </div>
                 {checkbox.isEditing ? (
-                  <div className="flex relative flex-row justify-between ">
+                  <div className="flex relative flex-row  w-screen justify-between ">
                     <input
                       className="plain-input"
                       style={{
                         fontSize: "18px",
-
+                        width: "100%",
                         borderRadius: "1px",
-                        marginRight: 10,
+                        marginRight: 50,
                       }}
                       type="text"
                       value={checkbox.label}

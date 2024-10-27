@@ -1,7 +1,7 @@
 "use client";
 import { useRive, Layout, Fit, Alignment } from "@rive-app/react-canvas";
 
-export const RiveDemo = () => {
+const RiveDemo = () => {
   const { RiveComponent } = useRive({
     src: "itkRobot.riv",
     stateMachines: "State Machine 1",
@@ -14,3 +14,5 @@ export const RiveDemo = () => {
 
   return <RiveComponent />;
 };
+
+export default RiveDemo;

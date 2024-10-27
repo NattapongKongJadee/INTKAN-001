@@ -1,14 +1,63 @@
-import React from "react";
-import { RiveDemo } from "@/app/components/robotITK";
-import Link from "next/link";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+// import { RiveDemo } from "@/app/components/robotITK";
+const RiveDemo = dynamic(() => import("./components/robotITK"), {
+  ssr: false, // Disable server-side rendering
+});
+import { useRouter } from "next/navigation";
+import { Bounce, ToastContainer, toast } from "react-toastify";
 import logoImg from "../../public/logo-itk.png";
-// import { Provider } from "react-redux";
-// import Image from "next/image";
-// import logo from "../../public/logo-removebg.png";
+import axios from "axios";
+import "react-toastify/dist/ReactToastify.css";
+import SimpleBackdrop from "./components/SimpleBackdrop/SimpleBackDrop";
 
 type Props = {};
 
 export default function Main({}: Props) {
+  const [username, setUserName] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string>("");
+  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const handleLogin = async (e: any) => {
+    console.log(username);
+    console.log(password);
+    // notify();
+    e.preventDefault();
+    setOpen(true);
+    try {
+      const response = await axios.post("http://localhost:3000/api/login", {
+        name: username,
+        password,
+      });
+      if (response.status == 200) {
+        router.replace("/main/planner");
+      } else {
+        setError(response.data.message || "LogIn Failed !!!");
+        alert("ไอดีและรหัสผ่านไม่ถูกต้อง");
+      }
+    } catch (e: any) {
+      if (e.response) {
+        alert("ไอดีและรหัสผ่านไม่ถูกต้อง");
+      } else if (e.request) {
+        alert("ไอดีและรหัสผ่านไม่ถูกต้อง");
+      } else {
+        alert("ไอดีและรหัสผ่านไม่ถูกต้อง");
+
+        /////
+      }
+    } finally {
+      setOpen(false);
+    }
+  };
   return (
     <div className="bg-white-100 to-cyan-100 flex ">
       <div className="min-h-screen w-1/2 flex justify-center items-center">
@@ -21,6 +70,7 @@ export default function Main({}: Props) {
               <RiveDemo />
             </div>
             <div className="card-body">
+              {/* <form onSubmit={handleLogin}> */}
               <h1 className="card-title justify-center my-2 font-bold text-2xl">
                 INTAKAN ENGINEERING LTD PARTNERSHIP
               </h1>
@@ -35,7 +85,13 @@ export default function Main({}: Props) {
                     <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM12.735 14c.618 0 1.093-.561.872-1.139a6.002 6.002 0 0 0-11.215 0c-.22.578.254 1.139.872 1.139h9.47Z" />
                   </svg>
                   <div></div>
-                  <input type="text" className="grow" placeholder="Username" />
+                  <input
+                    type="text"
+                    className="grow"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUserName(e.target.value)}
+                  />
                 </label>
 
                 <label className="input input-bordered input-lg flex items-center gap-2 my-2">
@@ -51,18 +107,26 @@ export default function Main({}: Props) {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <input type="password" className="grow" />
+                  <input
+                    type="password"
+                    className="grow"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </label>
               </div>
-              <Link href="/main/job-management" passHref legacyBehavior>
-                <button className="btn btn-info font-bold text-lg">
-                  LOG IN
-                </button>
-              </Link>
+              <button
+                className="btn btn-info font-bold text-lg"
+                onClick={handleLogin}
+              >
+                LOG IN
+              </button>
+              {/* </form> */}
             </div>
           </div>
         </div>
       </div>
+      <SimpleBackdrop open={open} setOpen={setOpen} />
     </div>
   );
 }

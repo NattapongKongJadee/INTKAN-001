@@ -1,9 +1,18 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import GoBackButton from "@/app/components/GoBackButton/GoBack";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs";
 import Link from "next/link";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+  type MRT_ColumnDef,
+} from "material-react-table";
+import { useRouter } from "next/navigation";
 
 import {
   Box,
@@ -22,6 +31,9 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { GoOrganization } from "react-icons/go";
 import { IoIosInformationCircleOutline } from "react-icons/io";
 import axios from "axios";
+import CustomModal from "@/app/components/ReuseModal/Reusemodal";
+import { log } from "node:console";
+import { io } from "socket.io-client";
 
 interface Company {
   _id: string;
@@ -31,7 +43,8 @@ interface Company {
   avatarImage: URL[];
   allImages: URL[];
   allStorage: string[];
-  listJob: [Object];
+  listJob: any;
+  dateCreated: string | Date;
 }
 
 export default function ListJob() {
@@ -40,7 +53,10 @@ export default function ListJob() {
   const [open, setOpen] = useState(false);
   const [poNumber, setPoNumber] = useState("");
   const [jobName, setJobName] = useState("");
+  const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState("");
   const { companyId, jobId } = useParams(); // Get the companyId from the URL dynamically
+  const router = useRouter();
 
   const styleModal = {
     position: "absolute",
@@ -49,15 +65,194 @@ export default function ListJob() {
     transform: "translate(-50%, -50%)",
     width: 600,
     maxWidth: "90vw",
-    bgcolor: "background.paper",
+    bgcolor: " #3a88fe",
     textAlign: "center",
     borderRadius: "16px",
+    borderColor: "#ffffff",
     boxShadow: 12,
     p: 4,
     display: "flex",
     flexDirection: "column",
     alignItems: "stretch",
   };
+
+  const handleForJobId = (jobId: string) => {
+    setSelectedJobId(jobId);
+    setOpenDeleteConfirm(true);
+  };
+  const handleOnCloseDelete = () => setOpenDeleteConfirm(false);
+  const columns = useMemo<MRT_ColumnDef<Company>[]>(
+    () => [
+      {
+        accessorKey: "index",
+        header: "ลำดับ",
+        size: 10,
+        Cell: ({ row }) => (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontWeight: "light",
+              fontSize: "18px",
+              fontFamily: "Roboto, sans-serif",
+            }}
+          >
+            {row.index + 1}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "id",
+        header: "เลขที่อ้างอิงใบเสนอราคา",
+        size: 50,
+        muiTableBodyCellProps: {
+          sx: {
+            fontFamily: "Roboto, sans-serif",
+            fontSize: "16px",
+            color: "#333",
+            padding: "8px 16px",
+          },
+        },
+      },
+      {
+        accessorKey: "jobName",
+        header: "ชื่องาน",
+        size: 100,
+        muiTableBodyCellProps: {
+          sx: {
+            fontFamily: "Roboto, sans-serif",
+            fontSize: "16px",
+            color: "#333",
+            padding: "8px 16px",
+          },
+        },
+      },
+      {
+        accessorFn: (row) => row.dateCreated, // Use accessor function to access dateCreated directly
+        id: "dateCreated",
+        header: "วันที่สร้าง",
+        size: 80,
+        muiTableBodyCellProps: {
+          sx: {
+            fontFamily: "Roboto, sans-serif",
+            fontSize: "16px",
+            color: "#333",
+            padding: "8px 16px",
+          },
+        },
+        Cell: ({ cell }) => {
+          const dateValue = cell.getValue();
+
+          return (
+            <div className="text-md">
+              {typeof dateValue === "string" ||
+              typeof dateValue === "number" ||
+              dateValue instanceof Date
+                ? dayjs(dateValue).format("DD-MM-YYYY")
+                : "N/A"}
+            </div>
+          );
+        },
+      },
+      {
+        id: "details",
+        header: "ข้อมูลงาน",
+        size: 100,
+        muiTableBodyCellProps: {
+          sx: {
+            fontFamily: "Roboto, sans-serif",
+            fontSize: "16px",
+            color: "#333",
+            padding: "8px 16px",
+          },
+        },
+
+        Cell: ({ row }) => {
+          return (
+            <Link
+              href={`/main/image-database/${companyId}/${row.original._id}`}
+            >
+              <Button
+                variant="contained"
+                sx={{
+                  background: "linear-gradient(to left, #007BFF, #00FFFF)",
+                  color: "white",
+                  "&:hover": {
+                    background: "linear-gradient(to right, #0056b3, #00b3b3)",
+                  },
+                }}
+              >
+                รายละเอียด
+              </Button>
+            </Link>
+          );
+        },
+      },
+      {
+        // accessorKey: "",
+        header: "ลบ",
+        size: 50,
+        muiTableBodyCellProps: {
+          sx: {
+            fontFamily: "Roboto, sans-serif",
+            fontSize: "16px",
+            color: "#333",
+            padding: "8px 16px",
+          },
+        },
+        Cell: ({ row, table }) => {
+          const jobId = row.original._id;
+          const isRowSelected = table
+            .getSelectedRowModel()
+            .flatRows.includes(row);
+
+          return (
+            <Button
+              disabled={!isRowSelected}
+              startIcon={<DeleteIcon />}
+              // onClick={() => handleDelete(jobId)}
+              onClick={() => handleForJobId(jobId)}
+              sx={{
+                backgroundColor: "#F00000",
+                padding: "8px 16px",
+                color: "white",
+                "&:disabled": {
+                  backgroundColor: "#ccc",
+                },
+              }}
+            >
+              ลบ
+            </Button>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const table = useMaterialReactTable<Company>({
+    columns,
+    data: company?.listJob || [],
+    initialState: { density: "compact" },
+    enableRowSelection: true,
+    muiTableHeadCellProps: {
+      sx: {
+        backgroundColor: "#007BFF",
+        fontFamily: "Roboto, sans-serif",
+        color: "white",
+        "& .MuiTableSortLabel-icon": {
+          color: "black !important",
+        },
+      },
+    },
+    muiTableBodyRowProps: ({ row }) => ({
+      sx: {
+        backgroundColor: row.index % 2 === 0 ? "#f9f9f9" : "#ffffff", // Apply alternating background color
+      },
+    }),
+  });
 
   const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -91,27 +286,55 @@ export default function ListJob() {
     try {
       // Make POST request to the backend
       const response = await axios.post(
-        `http://localhost:3000/api//image/new-job/${companyId}`,
+        `https://backend-itk-581518296545.asia-southeast1.run.app/api//image/new-job/${companyId}`,
         newJob
       );
 
       // Handle success
       console.log("Job added successfully:", response.data);
-      alert("Job added successfully");
+      handleClose();
+      // refecthCompanyData();
+      setJobName("");
+      setPoNumber("");
     } catch (error) {
       // Handle error
       console.error("Error adding job:", error);
       alert("Failed to add job");
     }
   };
-  useEffect(() => {
+  const handleDelete = async (jobId: any) => {
+    try {
+      const response = await axios.delete(
+        `https://backend-itk-581518296545.asia-southeast1.run.app/api/image/company/${companyId}/${jobId}/deleteJob`
+        //
+      );
+      if (response.status === 200) {
+        // setCompany((prevData: any) => {
+        //   if (!prevData) return prevData; // Ensure prevData is not null
+
+        //   return {
+        //     ...prevData,
+        //     listJob: prevData.listJob.filter((job: any) => job._id !== jobId),
+        //   };
+        // });
+        console.log("Job deleted successfully");
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    } finally {
+      handleOnCloseDelete();
+    }
+  };
+  const refecthCompanyData = () => {
     console.log(companyId, jobId);
 
     if (companyId) {
       console.log("Fetching company with ID:", companyId);
       axios;
       axios
-        .get(`http://localhost:3000/api/image/company/${companyId}`)
+        .get(
+          `https://backend-itk-581518296545.asia-southeast1.run.app/api/image/company/${companyId}`
+        )
 
         .then((response) => {
           console.log("Company data:", response.data);
@@ -121,105 +344,85 @@ export default function ListJob() {
           console.error("Error fetching company:", error);
         });
     }
+  };
+
+  useEffect(() => {
+    const socket = io(
+      "https://backend-itk-581518296545.asia-southeast1.run.app"
+    );
+
+    socket.on("jobAdded", ({ companyId, job }) => {
+      console.log("Received jobAdded event:", { companyId, job });
+
+      setCompany((prevData) => {
+        // Ensure prevData is of type Company
+        if (!prevData || prevData._id !== companyId) return prevData;
+
+        // Append the new job to listJob
+        return {
+          ...prevData,
+          listJob: [...prevData.listJob, job], // Use listJob instead of jobs
+        };
+      });
+    });
+
+    socket.on("jobDeleted", ({ companyId: eventCompanyId, jobId }) => {
+      console.log("Received jobDeleted event:", { eventCompanyId, jobId });
+
+      // Update the company data if the companyId matches the current one
+      setCompany((prevData: any) => {
+        if (!prevData || prevData._id !== eventCompanyId) return prevData;
+
+        return {
+          ...prevData,
+          listJob: prevData.listJob.filter((job: any) => job._id !== jobId),
+        };
+      });
+    });
+
+    return () => {
+      socket.disconnect(); // Cleanup the socket connection
+    };
+  }, [companyId]);
+
+  useEffect(() => {
+    refecthCompanyData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
 
   return (
     <>
       <div
-        style={{ width: "calc(100vw - 20%)" }}
-        className="flex my-4 font-bold text-xl items-center text-slate-600"
+        style={{ width: "calc(100vw - 15%)" }}
+        className="flex my-4 font-bold text-xl items-center   text-white font-sans  "
       >
-        <button className="btn mx-4" onClick={handleOpen}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#000000"
-            strokeWidth="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+        <div className="flex flex-row">
+          <div
+            className="flex bg-gradient-to-r from-[#007BFF] to-[#00FFFF] rounded-full p-2 items-center mr-4 cursor-pointer hover:scale-110 hover:bg-orange-500 rotate-20 transition duration-100"
+            onClick={handleOpen}
           >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="16"></line>
-            <line x1="8" y1="12" x2="16" y2="12"></line>
-          </svg>
-          เพิ่มงานใหม่
-        </button>
-        งานบริษัท {company?.companyName}
+            <AddIcon></AddIcon>
+          </div>
+          {/* <div className="p-2 text-lg text-white bg-gradient-to-r from-[#007BFF] to-[#00FFFF] rounded-lg shadow-lg"> */}
+          <div className="flex  text-2xl font-bold text-black items-center">
+            {company?.companyName}
+          </div>
+        </div>
         <div className="flex ml-auto">
           <GoBackButton />
         </div>
       </div>
-      <div style={{ width: "calc(100vw - 10%)", height: "100vh" }}>
-        <div className="overflow-x-auto">
-          <table className="table">
-            {/* head */}
-            <thead className="font-bold text-lg text-slate-500">
-              <tr>
-                <th></th>
-                <th>เลขอ้างอิงใบเสนอราคา</th>
-                <th>ชื่องาน</th>
-                <th>วันที่สร้าง</th>
-                <th>รายละเอียดงาน</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* row 1 */}
-              {/* <tr className="hover">
-                <th>1</th>
-                <td>Cy Ganderton</td>
-                <td>Quality Control Specialist</td>
-                <td>Blue</td>
-                <td>
-                  <button className="btn btn-info">รายละเอียดงาน</button>
-                </td>
-              </tr> */}
-              {company?.listJob &&
-                company.listJob.map((each: any, index: any) => (
-                  <tr className="hover" key={each.index}>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <div className=" text-md font-medium">{index}</div>
-                          {/* <div className="text-sm opacity-50">{each.address}</div> */}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <div className=" text-md font-medium">{each.id}</div>
-                          {/* <div className="text-sm opacity-50">{each.address}</div> */}
-                        </div>
-                      </div>
-                    </td>
-                    <td>{each.jobName}</td>
-                    <td>
-                      <div className="text-md">
-                        {" "}
-                        {dayjs(each.dateCreated).format("DD-MM-YYYY")}
-                      </div>
-                    </td>
-                    <td>
-                      <Link
-                        href={`/main/image-database/${company._id}/${each._id}`}
-                      >
-                        <button className="btn btn-info">รายละเอียดงาน</button>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              {/* row 2 */}
-            </tbody>
-          </table>
-        </div>
+      <div style={{ width: "calc(100vw - 15%)", height: "100vh" }}>
+        <MaterialReactTable table={table} />
       </div>
       <Modal open={open} onClose={handleClose}>
         <Box sx={styleModal}>
           <FormControl defaultValue="" required>
-            <Typography variant="h6" marginBottom={2}>
+            <Typography
+              variant="h6"
+              marginBottom={2}
+              style={{ fontFamily: "sans-serif", color: "white" }}
+            >
               เพิ่มงานใหม่
             </Typography>
 
@@ -247,13 +450,23 @@ export default function ListJob() {
               className=" flex flex-row my-4  justify-end items-end "
               // onClick={uploadNewCompany}
             >
-              <button className="btn btn-info" onClick={handleSubmit}>
+              <Button
+                variant="contained"
+                sx={{ bgcolor: "#77bb41" }}
+                onClick={handleSubmit}
+              >
                 บันทึก
-              </button>
+              </Button>
             </div>
           </FormControl>
         </Box>
       </Modal>
+      <CustomModal
+        header="ลบงาน"
+        open={openDeleteConfirm}
+        handleConfirm={() => handleDelete(selectedJobId!)}
+        handleClose={handleOnCloseDelete}
+      ></CustomModal>
     </>
   );
 }

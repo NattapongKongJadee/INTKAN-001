@@ -1,48 +1,57 @@
-import React, { memo } from "react";
-import dynamic from "next/dynamic";
-import { DraggableEvent, DraggableData } from "react-draggable";
+import React, { useRef } from "react";
+import { useDrag } from "react-dnd";
+
+const ItemTypes = {
+  COMPONENT: "component",
+};
 
 interface DraggableItemProps {
   position: {
     id: string;
+    name: string;
     x: number;
     y: number;
-    col: number;
-    row: number;
   };
-  handleStop: (
-    e: DraggableEvent,
-    data: DraggableData,
-    id: string
-  ) => Promise<void>;
+  currentParentId: string;
+  handleStop: (id: string, x: number, y: number, parentId: string) => void;
 }
 
-// Dynamically import Draggable with SSR disabled
-const Draggable = dynamic(() => import("react-draggable"), { ssr: false });
+const DraggableItem: React.FC<DraggableItemProps> = ({
+  position,
+  currentParentId,
+  handleStop,
+}) => {
+  const [, drag] = useDrag({
+    type: ItemTypes.COMPONENT,
+    item: { id: position.id },
+    end: (item, monitor) => {
+      const didDrop = monitor.didDrop();
+      if (didDrop) {
+        console.log("Drop successful for item:", item);
+        const sourceOffset = monitor.getSourceClientOffset();
+        if (sourceOffset) {
+          handleStop(item.id, sourceOffset.x, sourceOffset.y, currentParentId);
+        }
+      }
+    },
+  });
+  const ref = useRef<HTMLDivElement>(null);
+  drag(ref);
 
-const DraggableItem: React.FC<DraggableItemProps> = memo(
-  ({ position, handleStop }) => {
-    const handleStopWrapper = (e: DraggableEvent, data: DraggableData) => {
-      handleStop(e, data, position.id).catch((error) => {
-        console.error("Error in handleStop:", error);
-      });
-    };
-
-    return (
-      <Draggable
-        key={position.id}
-        position={{ x: position.x, y: position.y }}
-        onStop={handleStopWrapper} // Use the wrapper here
-      >
-        <div
-          className="relative rounded-full border-dashed bg-white shadow-xl p-1 text-bold text-sky-600 text-xl flex items-center justify-center cursor-pointer"
-          style={{ width: "5rem", height: "5rem" }}
-        >
-          {position.id}
-        </div>
-      </Draggable>
-    );
-  }
-);
+  return (
+    <div
+      ref={ref}
+      className="
+    rounded-full ml-6 my-2 border-dashed bg-white shadow-xl 
+    p-1 text-sky-600 lg:text-xl md:text-md flex items-center justify-center cursor-pointer
+    w-[3rem] h-[3rem] 
+    md:w-[4rem] md:h-[4rem] 
+    lg:w-[5rem] lg:h-[5rem]
+  "
+    >
+      {position.name}
+    </div>
+  );
+};
 
 export default DraggableItem;

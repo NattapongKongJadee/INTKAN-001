@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   CardContent,
   Button,
@@ -23,8 +23,13 @@ import PageContainer from "@/app/components/Container/PageContainer";
 import { IconCheck } from "@tabler/icons-react";
 import BlankCard from "@/app/components/BankCard/BankCard";
 import Breadcrumb from "@/app/components/Breadcumb/Breadcrumb";
-import { RiveDemo } from "@/app/components/robotITK";
+import RiveDemo from "@/app/components/robotITK";
+import { io } from "socket.io-client";
+
+import Image from "next/image";
 import "moment/locale/th"; // Import Thai locale for moment.js
+import axios from "axios";
+import { log } from "node:console";
 
 // moment.locale("en-GB");
 moment.locale("th");
@@ -32,6 +37,7 @@ moment.locale("th");
 const localizer = momentLocalizer(moment);
 
 type EvType = {
+  _id?: string;
   title: string;
   allDay?: boolean;
   start?: Date;
@@ -46,7 +52,7 @@ interface colorType {
 }
 
 const BigCalendar = ({ calendarHeight, calendarWidth }: any) => {
-  const [calevents, setCalEvents] = React.useState<any>(Events);
+  const [calevents, setCalEvents] = React.useState<any>();
   const [open, setOpen] = React.useState<boolean>(false);
   const [title, setTitle] = React.useState<string>("");
   const [slot, setSlot] = React.useState<EvType>();
@@ -82,11 +88,36 @@ const BigCalendar = ({ calendarHeight, calendarWidth }: any) => {
       value: "warning",
     },
   ];
-  const addNewEventAlert = (slotInfo: EvType) => {
+
+  const addNewEventAlert = async (slotInfo: EvType) => {
+    // Open a modal or interface to collect event details
     setOpen(true);
     setSlot(slotInfo);
     setStart(slotInfo.start);
     setEnd(slotInfo.end);
+
+    // Optionally, pre-fill a title or collect it via a form
+    const newEvent = {
+      title: slotInfo.title,
+      allDay: slotInfo.allDay || false,
+      start: slotInfo.start,
+      end: slotInfo.end,
+      color: slotInfo.color || "default",
+    };
+
+    try {
+      // Send a POST request to add the event to the backend
+      const response = await axios.post(
+        "https://backend-itk-581518296545.asia-southeast1.run.app/api/events",
+        newEvent
+      );
+      console.log("Event added:", response.data);
+
+      // Optionally, update your calendar state here
+      setCalEvents((prevEvents: any) => [...prevEvents, response.data]);
+    } catch (error) {
+      console.error("Error adding new event:", error);
+    }
   };
 
   const editEvent = (event: any) => {
@@ -99,52 +130,101 @@ const BigCalendar = ({ calendarHeight, calendarWidth }: any) => {
     setColor(newEditEvent.color);
     setStart(newEditEvent.start);
     setEnd(newEditEvent.end);
-    setUpdate(event);
+    setUpdate(newEditEvent);
   };
 
-  const updateEvent = (e: any) => {
+  const updateEvent = async (e: any) => {
     e.preventDefault();
-    setCalEvents(
-      calevents.map((elem: EvType) => {
-        if (elem.title === update.title) {
-          return { ...elem, title, start, end, color };
-        }
+    try {
+      const updatedEvent = {
+        title,
+        start,
+        end,
+        color,
+      };
 
-        return elem;
-      })
-    );
-    setOpen(false);
-    setTitle("");
-    setColor("");
-    setStart("");
-    setEnd("");
-    setUpdate(null);
+      const response = await axios.put(
+        `https://backend-itk-581518296545.asia-southeast1.run.app/api/events/${update._id}`,
+        updatedEvent
+      );
+
+      // setCalEvents(
+      //   calevents.map((elem: EvType) =>
+      //     elem._id === update._id ? response.data : elem
+      //   )
+      // );
+      setOpen(false);
+      setTitle("");
+      setColor("");
+      setStart("");
+      setEnd("");
+      setUpdate(null);
+    } catch (error) {
+      console.error("Error updating event:", error);
+    }
   };
   const inputChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) =>
     setTitle(e.target.value);
   const selectinputChangeHandler = (id: string) => setColor(id);
 
-  const submitHandler = (e: React.ChangeEvent<any>) => {
+  const submitHandler = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newEvents = calevents;
-    newEvents.push({
+
+    // Validate title and dates before proceeding
+    if (!title.trim()) {
+      console.error("Title is required");
+      alert("กรุณากรอกหัวข้องาน");
+      return;
+    }
+
+    const newEvent = {
       title,
       start,
       end,
       color,
-    });
-    setOpen(false);
-    e.target.reset();
-    setCalEvents(newEvents);
-    setTitle("");
-    setStart(new Date());
-    setEnd(new Date());
+    };
+
+    try {
+      // Send a POST request to the backend to save the event
+      const response = await axios.post(
+        "https://backend-itk-581518296545.asia-southeast1.run.app/api/events",
+        newEvent
+      );
+      console.log("Event added:", response.data);
+
+      // Update the calevents state with the event including its ID from the backend
+      // setCalEvents((prevEvents: any) => [...prevEvents, response.data]);
+    } catch (error) {
+      console.error("Error adding event:", error);
+    } finally {
+      // Close the dialog and reset the form state
+      setOpen(false);
+      setTitle("");
+      setStart(new Date());
+      setEnd(new Date());
+    }
   };
-  const deleteHandler = (event: EvType) => {
-    const updatecalEvents = calevents.filter(
-      (ind: EvType) => ind.title !== event.title
-    );
-    setCalEvents(updatecalEvents);
+
+  const deleteHandler = async (event: EvType) => {
+    try {
+      if (!event._id) {
+        console.error("Event ID is missing");
+        return;
+      }
+
+      await axios.delete(
+        `https://backend-itk-581518296545.asia-southeast1.run.app/api/events/${event._id}`
+      );
+      setOpen(false);
+
+      // const updatedCalEvents = calevents.filter(
+      //   (ind: EvType) => ind._id !== event._id
+      // );
+      // setCalEvents(updatedCalEvents);
+      console.log(`Event with ID ${event._id} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
   };
 
   const handleClose = () => {
@@ -171,13 +251,69 @@ const BigCalendar = ({ calendarHeight, calendarWidth }: any) => {
     setEnd(newValue);
   };
 
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get(
+        "https://backend-itk-581518296545.asia-southeast1.run.app/api/events"
+      );
+      console.log(response.data);
+      setCalEvents(response.data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+    console.log("test fetching event calendar");
+  }, []);
+
+  useEffect(() => {
+    const socket = io(
+      "https://backend-itk-581518296545.asia-southeast1.run.app"
+    );
+
+    socket.on("eventAdded", (newEvent) => {
+      console.log("Received eventAdded:", newEvent);
+      // Update the calendar events state
+      setCalEvents((prevEvents: any) => [...prevEvents, newEvent]);
+    });
+
+    socket.on("eventUpdated", (updatedEvent) => {
+      console.log("Received eventUpdated:", updatedEvent);
+
+      // Update the specific event in the state
+      setCalEvents((prevEvents: any) =>
+        prevEvents.map((event: EvType) =>
+          event._id === updatedEvent._id ? updatedEvent : event
+        )
+      );
+    });
+
+    socket.on("eventDeleted", (deletedEventId) => {
+      console.log("Received eventDeleted:", deletedEventId);
+
+      setCalEvents((prevEvents: any) =>
+        prevEvents.filter(
+          (event: EvType) => event && event._id !== deletedEventId // Check for null/undefined
+        )
+      );
+    });
+
+    return () => {
+      socket.disconnect(); // Cleanup the socket connection
+    };
+  }, []);
+
   return (
-    <PageContainer title="Calendar ui" description="this is Calendar page">
-      <Breadcrumb
-        title="ปฏิทิน"
-        subtitle="แบบแผนงาน"
-        ComponentProp={RiveDemo}
-      />
+    <PageContainer title="แบบแผนงาน" description="this is Calendar page">
+      <div className="flex items-center">
+        <Breadcrumb
+          title="ปฏิทิน"
+          subtitle="แบบแผนงาน"
+          // imageSrc={"/logo-removebg-2.png"}
+        />
+      </div>
       <BlankCard>
         {/* ------------------------------------------- */}
         {/* Calendar */}

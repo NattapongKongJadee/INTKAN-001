@@ -1,9 +1,12 @@
-.rbc-event.event-azure {
-  background-color: #1a97f5;
+.darkbg .rbc-today {
+  background-color: #e67c36;
 }
 
-.rbc-event.event-default {
+.rbc-event.event-azure {
   background-color: #615dff;
+}
+.rbc-event.event-default {
+  background-color: #1a97f5;
 }
 .rbc-event.event-red {
   background-color: #fc4b6c;
@@ -17,9 +20,7 @@
 .rbc-off-range-bg {
   background-color: #d2d2d20d;
 }
-.darkbg .rbc-today {
-  background-color: #3697e6;
-}
+
 .rbc-month-row + .rbc-month-row,
 .rbc-day-bg + .rbc-day-bg,
 .rbc-header,
@@ -34,7 +35,7 @@
 .darkbg .rbc-month-view,
 .darkbg .rbc-toolbar button,
 .darkbg .rbc-time-content > * + * > * {
-  border-color: #343e54;
+  border-color: #344954;
 }
 .rbc-event:focus,
 .rbc-day-slot .rbc-background-event:focus {

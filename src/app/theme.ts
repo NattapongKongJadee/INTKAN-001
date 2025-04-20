@@ -14,6 +14,15 @@ const theme = createTheme({
     fontSize: 16,
     fontFamily: font.style.fontFamily,
   },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 900,
+      lg: 1500, // Adjusted 'lg' breakpoint to better fit MacBook Pro screens
+      xl: 1800,
+    },
+  },
 });
 
 export default theme;

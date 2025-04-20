@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { IoMdCreate } from "react-icons/io";
-import { FaRegAddressBook } from "react-icons/fa";
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+  type MRT_ColumnDef,
+} from "material-react-table";
 import {
   Box,
   Button,
@@ -15,22 +19,45 @@ import {
   useTheme,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import Avatar from "@mui/material/Avatar";
-import Suka from "./../../assets/images/Suka.jpg";
-
-// public/suka.JPG
-
+import AddIcon from "@mui/icons-material/Add";
 import { GoOrganization } from "react-icons/go";
 import axios from "axios";
+import Avatar from "@mui/material/Avatar";
 import Link from "next/link";
-import { Console, log } from "node:console";
+import SimpleBackdrop from "@/app/components/SimpleBackdrop/SimpleBackDrop";
+import CustomModal from "@/app/components/ReuseModal/Reusemodal";
+import { io } from "socket.io-client";
+
+type Company = {
+  _id: string;
+  companyName: string;
+  address: string;
+  poNumber: number;
+  listJob: Array<string>;
+  avatarImage: string;
+};
 
 export default function ImageDatabase() {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [companies, setCompanies] = useState([]);
-  const handleOpen = () => setOpen(true);
-  const handleEditOpen = (data: any) => (console.log(data), setOpenEdit(true));
+  const [companies, setCompanies] = useState<any>([]);
+  const [imageSrc, setImageSrc] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [addressName, setAddressName] = useState("");
+  const [idCompany, setIdCompany] = useState("");
+  const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
+
+  const handleOpen = () => {
+    setOpen(true), console.log("test");
+  };
+  const handleEditOpen = (data: any) => (
+    console.log(data),
+    setCompanyName(data.companyName),
+    setIdCompany(data._id),
+    setImageSrc(data.avatarImage),
+    setAddressName(data.address),
+    setOpenEdit(true)
+  );
   const handleClose = () => {
     setOpen(false);
     setImageSrc("");
@@ -38,22 +65,6 @@ export default function ImageDatabase() {
 
   const handleCloseEdit = () => {
     setOpenEdit(false);
-  };
-  const [imageSrc, setImageSrc] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [addressName, setAddressName] = useState("");
-
-  const imilitRecord = 10;
-
-  //example data type
-  type Person = {
-    name: {
-      firstName: string;
-      lastName: string;
-    };
-    address: string;
-    city: string;
-    state: string;
   };
 
   const VisuallyHiddenInput = styled("input")({
@@ -67,6 +78,134 @@ export default function ImageDatabase() {
     whiteSpace: "nowrap",
     width: 1,
   });
+  const columns = useMemo<MRT_ColumnDef<Company>[]>(
+    () => [
+      {
+        accessorKey: "companyName",
+        header: "ชื่อบริษัท",
+        size: 200,
+        Cell: ({ row }) => (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontWeight: "light",
+              fontSize: "18px",
+              fontFamily: "Roboto, sans-serif",
+            }}
+          >
+            <img
+              src={row.original.avatarImage}
+              alt={`${row.original.companyName} logo`}
+              style={{ width: 40, height: 40, borderRadius: "50%" }}
+            />
+            {row.original.companyName}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "address",
+        header: "ข้อมูล / ที่อยู่",
+        size: 250,
+        muiTableBodyCellProps: {
+          sx: {
+            fontFamily: "Roboto, sans-serif", // Apply sans-serif font
+            fontSize: "16px", // Adjust font size
+            color: "#333", // Set text color
+            padding: "8px 16px", // Adjust cell padding
+          },
+        },
+      },
+      {
+        accessorKey: "listJob",
+        header: "จำนวนงาน",
+        size: 100,
+        muiTableBodyCellProps: {
+          sx: {
+            fontFamily: "Roboto, sans-serif", // Apply sans-serif font
+            fontSize: "16px", // Adjust font size
+            color: "#333", // Set text color
+            padding: "8px 16px", // Adjust cell padding
+          },
+        },
+        Cell: ({ cell }) => {
+          return (
+            <div className="badge badge-accent badge-lg p-4 text-white text-md font-sans font-bold">
+              {(cell.getValue() as string[]).length || 0}
+            </div>
+          );
+        }, // Default to 0 if undefined
+      },
+      {
+        id: "edit",
+        header: "แก้ไข",
+        size: 100,
+        Cell: ({ row }) => (
+          <Button
+            onClick={() => handleEditOpen(row.original)}
+            startIcon={<IoMdCreate />}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              padding: "8px 12px",
+              color: "white",
+              marginY: "6px",
+              background: "#CBDCEB", // Main Pink gradient
+              "&:hover": {
+                background: "linear-gradient(to right, #ff7f50, #ff9933)", // Orange gradient on hover
+              },
+            }}
+          >
+            แก้ไข
+          </Button>
+        ),
+      },
+      {
+        id: "details",
+        header: "ข้อมูลงาน",
+        size: 150,
+        Cell: ({ row }) => (
+          <Link href={`/main/image-database/${row.original._id}`}>
+            <Button
+              variant="contained"
+              sx={{
+                background: "linear-gradient(to left, #007BFF, #00FFFF)",
+                color: "white",
+                "&:hover": {
+                  background: "linear-gradient(to right, #0056b3, #00b3b3)",
+                },
+              }}
+            >
+              ข้อมูลงาน
+            </Button>
+          </Link>
+        ),
+      },
+    ],
+    []
+  );
+  const table = useMaterialReactTable({
+    columns,
+    data: companies,
+    initialState: { density: "compact" },
+    muiTableHeadCellProps: {
+      sx: {
+        backgroundColor: "#D5DBDB",
+        fontFamily: "Roboto, sans-serif", // Apply sans-serif font
+        fontSize: "18px", // Adjust font size
+        color: "black",
+        "& .MuiTableSortLabel-icon": {
+          color: "black !important",
+        },
+      },
+    },
+    muiTableBodyRowProps: ({ row }) => ({
+      sx: {
+        backgroundColor: row.index % 2 === 0 ? "#f9f9f9" : "#ffffff", // Apply alternating background color
+      },
+    }),
+  });
 
   const styleModal = {
     position: "absolute",
@@ -75,7 +214,7 @@ export default function ImageDatabase() {
     transform: "translate(-50%, -50%)",
     width: 600,
     maxWidth: "90vw",
-    bgcolor: "background.paper",
+    bgcolor: "#3a88fe",
     textAlign: "center",
     borderRadius: "16px",
     boxShadow: 12,
@@ -113,7 +252,7 @@ export default function ImageDatabase() {
       }
 
       const response = await axios.post(
-        "http://localhost:3000/api/image/new-company",
+        "https://backend-itk-581518296545.asia-southeast1.run.app/api/image/new-company",
         formData,
         {
           headers: {
@@ -122,9 +261,64 @@ export default function ImageDatabase() {
         }
       );
       console.log("Upload successful:", response.data);
-      alert("Upload Success");
+      // alert("Upload Success");
     } catch (err) {
       console.log(err, "Error uploding New company");
+    } finally {
+      handleClose();
+      // getAllCompanies();
+    }
+  };
+
+  const editCompany = async (companyId: string) => {
+    console.log("Company Name:", companyName);
+    console.log("Address Company:", addressName);
+    console.log("Image:", imageSrc);
+
+    try {
+      const formData = new FormData();
+      formData.append("companyName", companyName);
+      formData.append("address", addressName);
+
+      if (imageSrc) {
+        // Convert Base64 image URL to Blob
+        const response = await fetch(imageSrc);
+        const blob = await response.blob();
+        const file = new File([blob], "avatar.png", { type: blob.type });
+
+        formData.append("avatarImage", file);
+      }
+
+      const response = await axios.put(
+        `https://backend-itk-581518296545.asia-southeast1.run.app/api/image/edit-company/${companyId}`, // Adjust endpoint for editing
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log("Edit successful:", response.data);
+      // alert("Edit Success");
+    } catch (err) {
+      console.log(err, "Error editing company");
+    } finally {
+      handleCloseEdit();
+      // getAllCompanies();
+    }
+  };
+  const deleteCompany = async (companyId: string) => {
+    try {
+      const response = await axios.delete(
+        `https://backend-itk-581518296545.asia-southeast1.run.app/api/image/delete-company/${companyId}`
+      );
+      console.log("Company deleted successfully:", response.data);
+    } catch (error) {
+      console.error("Error deleting company:", error);
+    } finally {
+      setOpenDeleteConfirm(false);
+      handleCloseEdit();
+      // getAllCompanies();
     }
   };
 
@@ -145,7 +339,7 @@ export default function ImageDatabase() {
   const getAllCompanies = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/image/getAllCompanies"
+        "https://backend-itk-581518296545.asia-southeast1.run.app/api/image/getAllCompanies"
       );
       setCompanies(response.data);
     } catch (err) {
@@ -157,108 +351,95 @@ export default function ImageDatabase() {
     getAllCompanies();
   }, []);
 
-  return (
-    <div className="w-[calc(100vw-10%)] h-screen">
-      {/* <div className="w-[calc(100vw - 50%)]"> */}
-      {/* <div className="w-[calc(56% - 120px)]"> */}
-      <div className="flex flex-row">
-        <button
-          className="btn btn-info mx-2 my-2 text-sm "
-          onClick={handleOpen}
-        >
-          <IoMdCreate />
-          สร้างใหม่
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="table table-zebra">
-          {/* head */}
-          <thead className="bg-blue-300 bg-opacity-40 ">
-            <tr>
-              <th className="text-left font-bold text-gray-800 text-md">
-                ชื่อบริษัท
-              </th>
-              <th className="text-left font-bold text-gray-800 text-md">
-                ที่อยู่
-              </th>
-              <th className="text-left font-bold text-gray-800 text-md">
-                จำนวนงาน
-              </th>
-              <th className="text-left font-bold text-gray-800 text-md">
-                แก้ไข
-              </th>
-              <th className="text-left font-bold text-gray-800 text-md">
-                ข้อมูลงาน
-              </th>
-              <th className="text-left font-bold text-gray-800 text-md"></th>
-            </tr>
-          </thead>
+  useEffect(() => {
+    const socket = io(
+      "https://backend-itk-581518296545.asia-southeast1.run.app"
+    );
 
-          <tbody>
-            {companies &&
-              companies.map((each: any) => (
-                <tr>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="avatar">
-                        <div className="mask mask-squircle h-12 w-12">
-                          <img
-                            src={each.avatarImage}
-                            alt="Avatar Tailwind CSS Component"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <div className=" text-md font-medium">
-                          {each.companyName}
-                        </div>
-                        {/* <div className="text-sm opacity-50">{each.address}</div> */}
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="text-md"> {each.address}</div>
-                  </td>
-                  <td>{each.poNumber || 0}</td>
-                  <th>
-                    <button
-                      className="btn  btn-neutral btn-md"
-                      onClick={(e) => {
-                        const row = (e.target as HTMLButtonElement).closest(
-                          "tr"
-                        ); // Find the closest <tr> element
-                        if (row) {
-                          // Collect all the cell data from the row
-                          const rowData = Array.from(row.cells).map(
-                            (cell) => cell.textContent?.trim() || ""
-                          );
-                          handleEditOpen(rowData);
-                        }
-                      }}
-                    >
-                      แก้ไข
-                    </button>
-                  </th>
-                  <th>
-                    <Link href={`/main/image-database/${each._id}`}>
-                      <button className="btn btn-primary btn-md">
-                        ข้อมูลงาน
-                      </button>
-                    </Link>
-                  </th>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+    // Listen for the companyAdded event
+    socket.on("companyAdded", (newCompany) => {
+      console.log("Received companyAdded event:", newCompany);
+
+      // Update the state to include the new company
+      setCompanies((prevCompanies: any) => [...prevCompanies, newCompany]);
+    });
+
+    socket.on("companyUpdated", (updatedCompany) => {
+      console.log("Received companyUpdated event:", updatedCompany);
+
+      // Update the state with the updated company
+      setCompanies((prevCompanies: any) =>
+        prevCompanies.map((company: any) =>
+          company._id === updatedCompany._id ? updatedCompany : company
+        )
+      );
+    });
+
+    socket.on("companyDeleted", (deletedCompanyId) => {
+      console.log("Received companyDeleted event:", deletedCompanyId);
+
+      // Update the state to remove the deleted company
+      setCompanies((prevCompanies: any) =>
+        prevCompanies.filter((company: any) => company._id !== deletedCompanyId)
+      );
+    });
+
+    return () => {
+      socket.disconnect(); // Cleanup the socket connection
+    };
+  }, []);
+
+  console.log(companies);
+
+  return (
+    <div className="w-[calc(100vw-12%)]  bg-bg-image2 flex flex-col">
+      <div className="flex flex-row   ">
+        {/* <div className="flex relative my-2   mr-4  ">
+          <Image
+            src={"/logo-removebg-2.png"}
+            width={80}
+            height={80}
+            style={{
+              padding: "4px",
+              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.3)",
+              borderRadius: "4px",
+            }}
+          />
+        </div> */}
+        <Button
+          onClick={handleOpen}
+          startIcon={<AddIcon />}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            padding: "8px 16px",
+            color: "white",
+            marginY: "10px",
+            boxShadow: "0px 4px 5px rgba(0, 0, 0, 0.3)", // Large shadow
+            background: "linear-gradient(to top, #007BFF, #00FFFF)",
+            "&:hover": {
+              background: "linear-gradient(to right, #ffa500, #ffd1b3)",
+            },
+          }}
+        >
+          สร้างใหม่
+        </Button>
+      </div>
+      <div className="w-full overflow-y-auto">
+        <MaterialReactTable table={table} />
         <Modal
-          open={openEdit}
-          onClose={handleCloseEdit}
+          open={open}
+          onClose={handleClose}
           aria-labelledby="modal-modal-title"
           aria-describedby="modal-modal-description"
         >
           <Box sx={styleModal}>
             <FormControl defaultValue="" required>
-              <Typography variant="h6" marginBottom={2}>
+              <Typography
+                variant="h6"
+                marginBottom={2}
+                style={{ fontFamily: "sans-serif", color: "white" }}
+              >
                 ลงทะเบียนบริษัทใหม่
               </Typography>
               <Button
@@ -271,15 +452,14 @@ export default function ImageDatabase() {
                   width: 140,
                   // marginLeft: "auto",
                 }}
-                // onChange={handleImageChange}
                 component="label"
                 role={undefined}
                 variant="contained"
                 tabIndex={-1}
                 startIcon={<CloudUploadIcon />}
               >
-                Upload
-                <VisuallyHiddenInput type="file" />
+                รูปภาพ
+                <VisuallyHiddenInput type="file" onChange={handleImageChange} />
               </Button>
               <Avatar
                 src={imageSrc || "https://via.placeholder.com"}
@@ -312,7 +492,9 @@ export default function ImageDatabase() {
                 className=" flex flex-row my-4  justify-end items-end "
                 onClick={uploadNewCompany}
               >
-                <button className="btn btn-info">บันทึก</button>
+                <Button variant="contained" sx={{ bgcolor: "#77bb41" }}>
+                  บันทึก
+                </Button>
               </div>
             </FormControl>
           </Box>
@@ -324,7 +506,7 @@ export default function ImageDatabase() {
         >
           <Box sx={styleModal}>
             <FormControl defaultValue="" required>
-              <Typography variant="h6" marginBottom={2}>
+              <Typography variant="h6" marginBottom={2} sx={{ color: "white" }}>
                 แบบฟอร์มแก้ไขข้อมูลบริษัท
               </Typography>
               <Button
@@ -345,7 +527,7 @@ export default function ImageDatabase() {
                 startIcon={<CloudUploadIcon />}
               >
                 Upload
-                <VisuallyHiddenInput type="file" />
+                <VisuallyHiddenInput type="file" onChange={handleImageChange} />
               </Button>
               <Avatar
                 src={imageSrc || "https://via.placeholder.com"}
@@ -370,19 +552,19 @@ export default function ImageDatabase() {
               <textarea
                 className="textarea textarea-bordered  grow h-full w-auto  my-3"
                 placeholder="ที่อยู่ / ข้อมูลบริษัท"
-                value={"TEST"}
+                value={addressName}
                 onChange={(e) => handleAddressCompany(e)}
               ></textarea>
               <div className="flex flex-row">
                 <div
                   className=" flex flex-row my-4 mr-auto  justify-start  items-end "
-                  onClick={uploadNewCompany}
+                  onClick={() => setOpenDeleteConfirm(true)}
                 >
                   <button className="btn btn-error">ลบข้อมูลบริษัท</button>
                 </div>
                 <div
                   className=" flex flex-row my-4  justify-end items-end "
-                  onClick={uploadNewCompany}
+                  onClick={() => editCompany(idCompany)}
                 >
                   <button className="btn btn-info">บันทึก</button>
                 </div>
@@ -391,6 +573,12 @@ export default function ImageDatabase() {
           </Box>
         </Modal>
       </div>
+      <CustomModal
+        open={openDeleteConfirm}
+        header={companyName}
+        handleClose={() => setOpenDeleteConfirm(false)}
+        handleConfirm={() => deleteCompany(idCompany)}
+      ></CustomModal>
     </div>
     // {/* </div> */}
   );

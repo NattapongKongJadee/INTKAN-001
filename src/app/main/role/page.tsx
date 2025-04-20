@@ -3,9 +3,13 @@ import axios from "axios";
 import { IoIosAddCircle } from "react-icons/io";
 import CardPlanner from "@/app/view/app/card-role/card-planner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IoIosRefresh } from "react-icons/io";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableItem from "../../components/Draggable/DraggableAvatar";
+import { useDrop } from "react-dnd";
+
 interface Box {
   // name: string;
   id: any;
@@ -17,6 +21,7 @@ interface Box {
 
 interface Position {
   id: string;
+  name: string;
   x: number;
   y: number;
   col: number;
@@ -25,12 +30,13 @@ interface Position {
 }
 
 interface Component {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   remark: string;
   progressionValue: number;
   tier: string;
+  step: string;
   status: string;
   date: number;
   boxColor: string;
@@ -45,26 +51,113 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DraggableData, DraggableEvent } from "react-draggable";
+import dynamic from "next/dynamic";
+import DraggableContainer from "@/app/components/DraggableContainer/DraggableConatiner";
+import { log } from "node:console";
+import { io } from "socket.io-client";
 
 export default function Role() {
   const defaultPosition: Position[] = [
-    { id: "ป๋า", x: 0, y: 0, col: 0, row: 0, parentDivId: "" },
-    { id: "เจ้", x: 0, y: 0, col: 1, row: 0, parentDivId: "" },
-    { id: "เชียร์", x: 0, y: 0, col: 2, row: 0, parentDivId: "" },
-    { id: "ใหม่", x: 0, y: 0, col: 3, row: 0, parentDivId: "" },
-    { id: "พงษ์", x: 0, y: 0, col: 0, row: 1, parentDivId: "" },
-    { id: "นัท", x: 0, y: 0, col: 1, row: 1, parentDivId: "" },
-    { id: "มาร์ค", x: 0, y: 0, col: 2, row: 1, parentDivId: "" },
-    { id: "บอย", x: 0, y: 0, col: 3, row: 1, parentDivId: "" },
-    { id: "เหวิน", x: 0, y: 0, col: 0, row: 2, parentDivId: "" },
-    { id: "ต้อม", x: 0, y: 0, col: 1, row: 2, parentDivId: "" },
-    { id: "เอ็ม", x: 0, y: 0, col: 2, row: 2, parentDivId: "" },
-    { id: "เอ๋", x: 0, y: 0, col: 3, row: 2, parentDivId: "" },
-    { id: "หนูนา", x: 0, y: 0, col: 0, row: 3, parentDivId: "" },
-    { id: "แทนซิล", x: 0, y: 0, col: 1, row: 3, parentDivId: "" },
-    { id: "ป้าแมว", x: 0, y: 0, col: 2, row: 3, parentDivId: "" },
+    { id: "dad", name: "ป๋า", x: 0, y: 0, col: 0, row: 0, parentDivId: "main" },
+    {
+      id: "cheer",
+      name: "เชียร์",
+      x: 0,
+      y: 0,
+      col: 1,
+      row: 0,
+      parentDivId: "main",
+    },
+    {
+      id: "new",
+      name: "ป๋าน้อย",
+      x: 0,
+      y: 0,
+      col: 2,
+      row: 0,
+      parentDivId: "main",
+    },
+    {
+      id: "pong",
+      name: "พงษ์",
+      x: 0,
+      y: 0,
+      col: 3,
+      row: 0,
+      parentDivId: "main",
+    },
+    { id: "nut", name: "นัด", x: 0, y: 0, col: 4, row: 0, parentDivId: "main" },
+    {
+      id: "mark",
+      name: "มาก",
+      x: 0,
+      y: 0,
+      col: 0,
+      row: 1,
+      parentDivId: "main",
+    },
+    { id: "boy", name: "บอย", x: 0, y: 0, col: 1, row: 1, parentDivId: "main" },
+    {
+      id: "wen",
+      name: "เหวิน",
+      x: 0,
+      y: 0,
+      col: 2,
+      row: 1,
+      parentDivId: "main",
+    },
+    {
+      id: "tom",
+      name: "ต้อม",
+      x: 0,
+      y: 0,
+      col: 3,
+      row: 1,
+      parentDivId: "main",
+    },
+    { id: "m", name: "เอ็ม", x: 0, y: 0, col: 4, row: 1, parentDivId: "main" },
+    { id: "o", name: "โอ๋", x: 0, y: 0, col: 0, row: 2, parentDivId: "main" },
+    {
+      id: "nuna",
+      name: "หนูนา",
+      x: 0,
+      y: 0,
+      col: 1,
+      row: 2,
+      parentDivId: "main",
+    },
+    {
+      id: "tansil",
+      name: "แทนซิล",
+      x: 0,
+      y: 0,
+      col: 2,
+      row: 2,
+      parentDivId: "main",
+    },
+    {
+      id: "meow",
+      name: "ป้าแมว",
+      x: 0,
+      y: 0,
+      col: 3,
+      row: 2,
+      parentDivId: "main",
+    },
+    {
+      id: "aumnuay",
+      name: "อำนวย",
+      x: 0,
+      y: 0,
+      col: 4,
+      row: 2,
+      parentDivId: "main",
+    },
   ];
+
+  const ItemTypes = {
+    COMPONENT: "component",
+  };
 
   // const [cardBox, setCardBox] = useState<Box[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -75,6 +168,8 @@ export default function Role() {
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
     null
   );
+  const targetRef = useRef(null);
+
   const handleOpenDelete = (id: string) => {
     console.log(id);
     setSelectedComponentId(id);
@@ -84,188 +179,74 @@ export default function Role() {
     setSelectedComponentId(null);
     setOpenDelete(false);
   };
+
   const [jobHeader, setJobHeader] = useState("");
   const [positions, setPositions] = useState<Position[]>([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [components, setComponents] = useState<Component[]>([]);
 
-  const gridSize = 80;
+  const RiveDemo = dynamic(() => import("../../components/robotITK"), {
+    ssr: false, // Disable server-side rendering
+  });
 
-  const determineParentDiv = (componentId: string) => {
-    for (const component of components) {
-      console.log(
-        "COMPONENTS ID ",
-        components.map((e) => console.log(e.id))
-      );
+  const handleStop = (id: string, x: number, y: number, parentId: string) => {
+    console.log("handleStop called with:", { id, x, y, parentId });
 
-      console.log("CHECK COMPONENT ID", componentId);
+    setPositions((prevPositions) =>
+      prevPositions.map((pos) =>
+        pos.id === id ? { ...pos, x, y, parentDivId: parentId } : pos
+      )
+    );
 
-      if (component.id === componentId) {
-        return component.id;
-      }
-    }
-
-    return null; // Default or fallback parentDivId if no match is found
+    axios
+      .put(
+        `https://backend-itk-581518296545.asia-southeast1.run.app/positions/${id}`,
+        {
+          x,
+          y,
+          parentDivId: parentId,
+        }
+      )
+      .catch((error) => console.error("Error updating backend:", error));
   };
+  const handleDrop = (
+    draggedItemId: any,
+    targetComponentId: any,
+    dropPosition = { x: 0, y: 0 }
+  ) => {
+    console.log("Dragged item ID:", draggedItemId);
+    console.log("Target component ID to drop into:", targetComponentId);
+    console.log("Positions before update:", positions);
 
-  // const handleStop = async (e: any, data: any, id: any) => {
-  //   const newParentDiv = determineParentDiv(id);
-
-  //   if (!positions) {
-  //     console.error("Positions array is null or undefined");
-  //     return;
-  //   }
-
-  //   const updatedPositions: any = positions.map((pos) => {
-  //     if (pos.id === id) {
-  //       return {
-  //         ...pos,
-  //         x: data.x,
-  //         y: data.y,
-  //         col: Math.round(data.x / gridSize),
-  //         row: Math.round(data.y / gridSize),
-  //         parentDivId: newParentDiv || pos.parentDivId,
-  //       };
-  //     }
-  //     return pos;
-  //   });
-  //   setPositions(updatedPositions);
-  //   try {
-  //     await axios.put(`http://localhost:3000/positions/${id}`, {
-  //       x: data.x,
-  //       y: data.y,
-  //       col: Math.round(data.x / gridSize),
-  //       row: Math.round(data.y / gridSize),
-  //       parentDivId: newParentDiv,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error updating position:", error);
-  //   }
-  // };
-
-  const handleStop = async (e: any, data: any, id: any) => {
-    if (!positions) {
-      console.error("Positions array is null or undefined");
-      return;
-    }
-
-    // Calculate new position
-    const newX = data.x;
-    const newY = data.y;
-
-    // Update the positions state
     const updatedPositions = positions.map((pos) =>
-      pos.id === id ? { ...pos, x: newX, y: newY } : pos
+      pos.id === draggedItemId
+        ? {
+            ...pos,
+            x: dropPosition.x,
+            y: dropPosition.y,
+            parentDivId: targetComponentId,
+          }
+        : pos
     );
     setPositions(updatedPositions);
+    console.log("Positions state after update:", updatedPositions);
 
-    // Update the position on the server
-    try {
-      await axios.put(`http://localhost:3000/positions/${id}`, {
-        x: newX,
-        y: newY,
-      });
-    } catch (error) {
-      console.error("Error updating position:", error);
-    }
+    // Update backend
+    axios
+      .put(
+        `https://backend-itk-581518296545.asia-southeast1.run.app/positions/${draggedItemId}`,
+        {
+          x: dropPosition.x,
+          y: dropPosition.y,
+          parentDivId: targetComponentId,
+        }
+      )
+      // .then((response) => {
+      //   console.log("Backend update successful:", response.data),
+      //     console.log("Check positions after drop", positions);
+      // })
+      .catch((error) => console.error("Error updating backend:", error));
   };
-
-  // const handleStop = async (
-  //   e: any,
-  //   data: any,
-  //   draggableComponentId: string
-  // ) => {
-  //   // Select the right-side container
-  //   const rightContainer = document.querySelector(".right-container");
-
-  //   if (rightContainer) {
-  //     const rightContainerRect = rightContainer.getBoundingClientRect();
-  //     console.log("Right container bounding box:", rightContainerRect);
-  //     // Adjust coordinates to be relative to the document
-  //     const newX = data.x + rightContainerRect.left;
-  //     const newY = data.y + rightContainerRect.top;
-
-  //     console.log("Adjusted coordinates:", newX, newY);
-
-  //     const newParentDivId = getDroppedOnParentDiv(newX, newY);
-
-  //     if (newParentDivId) {
-  //       console.log("New parent div detected:", newParentDivId);
-  //       // Proceed with updating the positions or state as necessary...
-  //     }
-  //   } else {
-  //     console.error("Right container not found!");
-  //   }
-  // };
-
-  function getDroppedOnParentDiv(x: number, y: number): string | null {
-    console.log("getDroppedOnParentDiv called with coordinates:", x, y);
-
-    let detectedParentDivId: string | null = null;
-
-    for (const parentDiv of components) {
-      console.log("Checking parentDiv:", parentDiv.id);
-
-      const parentElement = document.getElementById(parentDiv.id);
-
-      if (!parentElement) {
-        console.warn(`No element found for id: ${parentDiv.id}`);
-        continue;
-      }
-
-      const rect = parentElement.getBoundingClientRect();
-
-      // Detailed bounding box logs
-      console.log(`Bounding box for ${parentDiv.id}:`, rect);
-
-      if (
-        x >= rect.left &&
-        x <= rect.right &&
-        y >= rect.top &&
-        y <= rect.bottom
-      ) {
-        detectedParentDivId = parentDiv.id;
-        console.log("Dropped on:", detectedParentDivId);
-        break;
-      }
-    }
-
-    return detectedParentDivId;
-  }
-
-  // Update position when the parent div moves
-  // function getDroppedOnParentDiv(x: number, y: number): string | null {
-  //   let detectedParentDivId: string | null = null;
-
-  //   for (const parentDiv of components) {
-  //     console.log("Checking parentDiv:", parentDiv.id);
-  //     const parentElement = document.getElementById(parentDiv.id);
-
-  //     if (!parentElement) {
-  //       console.warn(`No element found for id: ${parentDiv.id}`);
-  //       continue; // Skip this loop iteration if the element is not found
-  //     }
-
-  //     const rect = parentElement!.getBoundingClientRect();
-
-  //     // Log bounding box for debugging
-  //     console.log("Bounding box for:", parentDiv.id, rect);
-
-  //     if (
-  //       x >= rect.left &&
-  //       x <= rect.right &&
-  //       y >= rect.top &&
-  //       y <= rect.bottom
-  //     ) {
-  //       // If more than one div is a candidate, you might want to prioritize or decide based on some condition
-  //       detectedParentDivId = parentDiv.id;
-  //       console.log("Dropped on:", detectedParentDivId);
-  //       break; // Exit loop if you find the first matching parent div
-  //     }
-  //   }
-
-  //   return detectedParentDivId;
-  // }
 
   const handleDeleteBox = (id: any) => {
     handleOpenDelete(id);
@@ -276,14 +257,16 @@ export default function Role() {
     if (selectedComponentId) {
       try {
         const response = await axios.delete(
-          `http://localhost:3000/components/${selectedComponentId}`
+          `https://backend-itk-581518296545.asia-southeast1.run.app/components/${selectedComponentId}`
         );
-        if (response.status === 204) {
-          setComponents(components.filter((e) => e.id !== selectedComponentId));
-          alert("Deleted success");
-        } else {
-          console.log("Failed to Delete Component");
-        }
+        // if (response.status === 204) {
+        //   setComponents(
+        //     components.filter((e) => e._id !== selectedComponentId)
+        //   );
+        // alert("Deleted success");
+        // } else {
+        //   console.log("Failed to Delete Component");
+        // }
       } catch (e) {
         console.log("Error deleteing component", e);
       } finally {
@@ -305,7 +288,7 @@ export default function Role() {
     left: "50%",
     transform: "translate(-50%, -50%)",
     width: 300,
-    bgcolor: "background.paper",
+    bgcolor: "#3a88fe",
     textAlign: "center",
     borderRadius: "16px",
     // border: "1px solid #000",
@@ -317,7 +300,7 @@ export default function Role() {
     setPositions(defaultPosition);
     try {
       await axios.post(
-        "http://localhost:3000/reset-positions",
+        "https://backend-itk-581518296545.asia-southeast1.run.app/reset-positions",
         defaultPosition
       );
     } catch (e) {
@@ -332,6 +315,7 @@ export default function Role() {
       remark: null,
       progressionValue: 0,
       tier: "TIER 1",
+      step: "ผลิต",
       status: "ดำเนินการผลิต",
       date: Date.now(),
       boxColor: "white",
@@ -339,11 +323,11 @@ export default function Role() {
     };
     try {
       const response = await axios.post(
-        "http://localhost:3000/components",
+        "https://backend-itk-581518296545.asia-southeast1.run.app/components",
         newComponent
       );
       setComponents([...components, response.data]);
-      alert("สำเร็จ !!!");
+      // alert("สำเร็จ !!!");
     } catch (e) {
       console.log("Error for adding components" + e);
     }
@@ -351,8 +335,10 @@ export default function Role() {
 
   const fetchComponents = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/components");
-      console.log("CHECK RESPONE AND DATA", response.data);
+      const response = await axios.get(
+        "https://backend-itk-581518296545.asia-southeast1.run.app/components"
+      );
+      console.log("CHECK RESPONE AND DATA components", response.data);
 
       setComponents(response.data);
     } catch (error) {
@@ -360,28 +346,142 @@ export default function Role() {
     }
   };
 
-  useEffect(() => {
-    fetchComponents();
-  }, []);
+  const fetchPosition = async () => {
+    try {
+      const response = await axios.get(
+        "https://backend-itk-581518296545.asia-southeast1.run.app/positions"
+      );
+      console.log("CHECK RESPONE AND DATA positions", response.data);
+      setPositions(response.data);
+    } catch (e) {
+      console.log("Error fetching postiion", e);
+    }
+  };
+
+  const handleUpdatePercentage = (id: string, progressionValue: number) => {
+    setComponents((prevComponents) =>
+      prevComponents.map((component) =>
+        component._id === id ? { ...component, progressionValue } : component
+      )
+    );
+  };
+
+  const handleUpdateRemark = (id: string, remark: string) => {
+    setComponents((prevComponents) =>
+      prevComponents.map((component) =>
+        component._id === id ? { ...component, remark } : component
+      )
+    );
+  };
+
+  const handleUpdateDescription = (id: string, description: string) => {
+    setComponents((prevComponents) =>
+      prevComponents.map((component) =>
+        component._id === id ? { ...component, description } : component
+      )
+    );
+  };
+
+  const handleUpdateTier = (id: string, tier: string) => {
+    setComponents((prevComponents) =>
+      prevComponents.map((component) =>
+        component._id === id ? { ...component, tier } : component
+      )
+    );
+  };
+
+  const handleUpdateStep = (id: string, step: string) => {
+    setComponents((prevComponents) =>
+      prevComponents.map((component) =>
+        component._id === id ? { ...component, step } : component
+      )
+    );
+  };
+
+  const handleUpdateDate = (id: string, date: number) => {
+    setComponents((prevComponents) =>
+      prevComponents.map((component) =>
+        component._id === id ? { ...component, date } : component
+      )
+    );
+  };
 
   useEffect(() => {
-    const fetchPosition = async () => {
-      try {
-        const response = await axios.get("http://localhost:3000/positions");
-        setPositions(response.data);
-      } catch (e) {
-        console.log("Error fetching postiion", e);
-      }
-    };
+    fetchComponents();
     fetchPosition();
   }, []);
 
+  useEffect(() => {
+    console.log(components);
+  }, [components]);
+
+  useEffect(() => {
+    console.log("Updated positions state:", positions);
+  }, [positions]);
+
+  useEffect(() => {
+    const socket = io(
+      "https://backend-itk-581518296545.asia-southeast1.run.app"
+    );
+
+    socket.on("componentAdded", (newComponent) => {
+      console.log("Received componentAdded event:", newComponent);
+
+      // Update the components state
+      setComponents((prevComponents) => [...prevComponents, newComponent]);
+    });
+
+    socket.on("componentDeleted", (deletedComponentId) => {
+      console.log(
+        "Received componentDeleted event for ID:",
+        deletedComponentId
+      );
+
+      // Update the components state
+      setComponents((prevComponents) =>
+        prevComponents.filter(
+          (component) => component._id !== deletedComponentId
+        )
+      );
+    });
+    socket.on("componentUpdated", (updatedComponent) => {
+      console.log("Received componentUpdated event:", updatedComponent);
+
+      setComponents((prevComponents) =>
+        prevComponents.map((component) =>
+          component._id === updatedComponent._id ? updatedComponent : component
+        )
+      );
+    });
+
+    socket.on("positionUpdated", (updatedPosition) => {
+      console.log("Received positionUpdated event:", updatedPosition);
+
+      // Update the positions state with the updated position
+      setPositions((prevPositions) =>
+        prevPositions.map((pos) =>
+          pos.id === updatedPosition.id ? { ...pos, ...updatedPosition } : pos
+        )
+      );
+    });
+
+    socket.on("positionsReset", (newPositions) => {
+      console.log("Received positionsReset event:", newPositions);
+      setPositions(newPositions); // Update the state with the new positions
+    });
+
+    return () => {
+      socket.disconnect(); // Cleanup the socket connection
+    };
+  }, []);
+  const CELL_SIZE = 100; // Define the size of each cell in the grid
+
   return (
     // <div className=" flex items-center bg-neutral-100 w-1/2">
-    <div className="flex flex-row h-full w-[90vw]">
-      <div className="flex flex-col w-[70vw]  ml-4 my-4  bg-neutral-100  rounded-lg shadow-xl relative">
+    <div className="flex flex-row h-full w-[calc(100vw-7%)]">
+      <div className="flex flex-col w-[70vw]  ml-4 my-4  bg-bg-image3  rounded-lg shadow-xl relative">
         <div
-          className="bg-orange-global rounded-lg p-2 mb-4 inline-flex items-center shadow-md"
+          className="bg-gradient-to-l from-custom-blue to-custom-cyan rounded-lg p-2 inline-flex items-center shadow-lg transition-transform transform hover:scale-105 hover:shadow-xl hover:brightness-110"
           style={{ maxWidth: "fit-content" }}
         >
           <IoIosAddCircle
@@ -402,12 +502,29 @@ export default function Role() {
         >
           <Box sx={styleModal}>
             <FormControl defaultValue="" required>
-              <Typography variant="h6" marginBottom={1}>
-                กรุณากรอกหัวข้องาน
+              <Typography variant="h6" marginBottom={1} color={"white"}>
+                หัวข้องาน
               </Typography>
               <TextField
                 id="outlined-basic"
-                label="หัวข้องาน"
+                sx={{
+                  input: {
+                    color: "white",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "white",
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "white",
+                  },
+                  "& .MuiInput-underline:before": {
+                    borderBottomColor: "white",
+                  },
+                  "& .MuiInput-underline:after": {
+                    borderBottomColor: "white",
+                  },
+                }}
+                label="หัวข้องาน "
                 variant="standard"
                 value={jobHeader}
                 onChange={(e) => setJobHeader(e.target.value)}
@@ -446,60 +563,71 @@ export default function Role() {
             </FormControl>
           </Box>
         </Modal>
-        {/* <div className="grid grid-cols-2 gap-4 items-start"> */}
-        <div className="flex flex-col m-auto items-start">
-          {components.map((data, i) => (
-            <div className="relative mb-6" key={data.id}>
-              <AnimatePresence>
-                <motion.div
-                  key={data.id}
-                  initial={{ opacity: 0, scale: 0.75 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{
-                    opacity: 0,
-                    scale: 0.15,
-                    transition: { duration: 0.65 },
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <CardPlanner
-                    componentID={data.id}
-                    title={data.title}
-                    description={data.description}
-                    remark={data.remark}
-                    progressionValue={data.progressionValue}
-                    tier={data.tier}
-                    date={data.date}
-                    status={data.status}
-                    boxColor={data.boxColor}
-                    handleDelete={() => handleDeleteBox(data.id)}
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          ))}
-        </div>
+        <DndProvider backend={HTML5Backend}>
+          <div className="flex flex-col m-auto items-start">
+            {components.map((data, i) => (
+              <div className="relative mb-6" key={data._id}>
+                <AnimatePresence>
+                  <motion.div
+                    key={data._id}
+                    initial={{ opacity: 0, scale: 0.75 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.15,
+                      transition: { duration: 0.65 },
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <CardPlanner
+                      componentID={data._id}
+                      title={data.title}
+                      description={data.description}
+                      remark={data.remark}
+                      progressionValue={data.progressionValue}
+                      tier={data.tier}
+                      date={data.date}
+                      status={data.status}
+                      step={data.step}
+                      handleDelete={() => handleDeleteBox(data._id)}
+                      positions={positions}
+                      handleStop={handleStop}
+                      onDrop={(draggedItemId, targetComponentId) =>
+                        handleDrop(draggedItemId, targetComponentId)
+                      }
+                      onUpdatePercentage={handleUpdatePercentage}
+                      onUpdateRemark={handleUpdateRemark}
+                      onUpdateDescription={handleUpdateDescription}
+                      onUpdateTier={handleUpdateTier}
+                      onUpdateStep={handleUpdateStep}
+                      onUpdateDate={handleUpdateDate}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </DndProvider>
       </div>
-      <div className="flex flex-col">
-        <div className="bg-indigo-300 rounded-lg p-2 ml-4 mt-4 items-center shadow-md">
-          <div className="card justify-center items-center content-center">
+      <div className="flex flex-col ">
+        <div className="flex relative justify-center items-center mt-10 font-sans text-2xl font-bold italic  text-sky-500    ">
+          INTAKAN ENGINEERING
+        </div>
+        <div style={{ height: 500 }}>
+          <RiveDemo />
+        </div>
+        <div className="bg-gradient-to-l from-custom-blue to-custom-cyan  rounded-lg p-2 ml-4 mt-4 items-center shadow-lg">
+          <div className="card justify-center items-center content-center text-white font-sans">
             สมาชิกภายในองค์กร
           </div>
         </div>
-        <div className="relative grid grid-cols-4  w-[30vw] h-full  ml-4 my-4 p-6 bg-sky-50  rounded-lg shadow-xl justify-center content-start gap-y-4 right-container">
-          <IoIosRefresh
-            className="absolute -top-3  bg-gray-200 rounded-full p-2 shadow-xl cursor-pointer hover:bg-red-400"
-            size={40}
-            onClick={resetPosition}
+        <DndProvider backend={HTML5Backend}>
+          <DraggableContainer
+            positions={positions}
+            handleStop={handleStop}
+            resetPosition={resetPosition}
           />
-          {positions.map((position, index) => (
-            <DraggableItem
-              key={position.id}
-              position={position}
-              handleStop={handleStop}
-            />
-          ))}
-        </div>
+        </DndProvider>
       </div>
     </div>
   );

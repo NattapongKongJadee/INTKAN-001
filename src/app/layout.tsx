@@ -4,6 +4,7 @@ import { Bai_Jamjuree } from "next/font/google";
 import "./globals.css";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+
 import theme from "./theme";
 
 const font = Bai_Jamjuree({

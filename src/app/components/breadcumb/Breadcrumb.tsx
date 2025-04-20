@@ -1,9 +1,7 @@
 import React, { ComponentType } from "react";
 import { Grid, Typography, Box, Breadcrumbs, Link, Theme } from "@mui/material";
-
-// import { NavLink } from "react-router-dom";
-import { RiveDemo } from "./robotITK";
-import breadcrumbImg from "../../assets/images/ChatBc.png";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import { IconCircle } from "@tabler/icons-react";
 
 interface BreadCrumbType {
@@ -11,37 +9,32 @@ interface BreadCrumbType {
   items?: any[];
   title: string;
   children?: JSX.Element;
-  // robot: ComponentType;
-  ComponentProp?: React.ComponentType<any>;
 }
-const Breadcrumb = ({
-  subtitle,
-  items,
-  title,
-  children,
-  ComponentProp,
-}: // ComponentProp,
-BreadCrumbType) => (
+
+const RiveDemo = dynamic(() => import("../robotITK"), {
+  ssr: false,
+});
+
+const Breadcrumb = ({ subtitle, items, title, children }: BreadCrumbType) => (
   <Grid
     container
     sx={{
-      backgroundColor: "var(--accent-color)",
+      backgroundColor: "#94e3fe",
       borderRadius: (theme: Theme) => theme.shape.borderRadius / 4,
-      p: "15px 15px ",
-      // marginBottom: "10px",
+      p: "15px 15px",
       position: "relative",
       overflow: "hidden",
       height: "10vh",
     }}
   >
     <Grid item xs={12} sm={6} lg={8} mb={1}>
-      <div className="flex flex-row">
-        <div className="flex flex-col ">
+      <div className="flex flex-row items-start">
+        <div className="flex flex-col">
           <Typography variant="h5" color="#FFFFFF">
             {title}
           </Typography>
           <Typography
-            color="textSecondary"
+            color="white"
             variant="h6"
             fontSize={16}
             fontWeight={300}
@@ -51,6 +44,13 @@ BreadCrumbType) => (
             {subtitle}
           </Typography>
         </div>
+        <Image
+          src="/h-itk2.png"
+          width={150}
+          height={180}
+          style={{ position: "absolute", top: -30, right: 0 }}
+          alt="Descriptive text about the image" // Add a descriptive alt property here
+        ></Image>
       </div>
 
       <Breadcrumbs
@@ -68,59 +68,11 @@ BreadCrumbType) => (
         {items
           ? items.map((item) => (
               <div key={item.title}>
-                (<Typography color="textPrimary">{item.title}</Typography>)
+                <Typography color="textPrimary">{item.title}</Typography>
               </div>
             ))
           : ""}
       </Breadcrumbs>
-    </Grid>
-    <Grid item xs={12} sm={6} lg={4} display="flex" alignItems="flex-end">
-      <Box
-        sx={{
-          display: { xs: "none", md: "block", lg: "flex" },
-          alignItems: "center",
-          // justifyContent: "flex-end",
-          width: "100%",
-        }}
-      >
-        {children ? (
-          <Box sx={{ top: "0px", position: "absolute" }}>{children}</Box>
-        ) : (
-          <>
-            {/* <Box sx={{ top: "0px", position: "absolute" }}> */}
-            {/* <div
-              style={{
-                height: 400,
-                cursor: "pointer",
-                // alignItems: "initial",
-                position: "relative",
-                // bottom: 94,
-                marginLeft: 90,
-                bottom: 115,
-                // bottom: 780,
-                // right: 2,
-                zIndex: 30,
-              }}
-            > */}
-            <div
-              style={{
-                height: 150,
-                cursor: "pointer",
-                // alignItems: "initial",
-                position: "relative",
-                // bottom: 94,
-                marginLeft: 50,
-                bottom: 53,
-                // bottom: 780,
-                // right: 2,
-                // zIndex: 30,
-              }}
-            >
-              {/* <RiveDemo /> */}
-            </div>
-          </>
-        )}
-      </Box>
     </Grid>
   </Grid>
 );

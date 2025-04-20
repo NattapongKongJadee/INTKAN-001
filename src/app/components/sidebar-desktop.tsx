@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import React, {
   ReactNode,
@@ -5,10 +6,13 @@ import React, {
   useContext,
   useState,
   CSSProperties,
+  useEffect,
 } from "react";
 import { FaChevronRight, FaChevronLeft } from "react-icons/fa6";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import logoITK from "../../../public/logo-itk.png";
+import Image from "next/image";
+
 // import as Logo from
 
 interface SideBarDesktopProps {
@@ -21,6 +25,7 @@ const initialSidebarState = {
 const SideBarContext = createContext(initialSidebarState);
 export function SideBarDesktop({ children }: SideBarDesktopProps) {
   const [expanded, setExpanded] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const asideStyle: CSSProperties = {
     color: "#44377F",
     width: expanded ? "20%" : "5%",
@@ -30,6 +35,10 @@ export function SideBarDesktop({ children }: SideBarDesktopProps) {
     boxShadow: "2px 0 12px rgba(0,0,0,0.1)",
     zIndex: "0",
   };
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    setUsername(storedUsername);
+  }, []);
   return (
     <aside style={asideStyle}>
       <nav className="h-full flex flex-col  border-r shadow-sm">
@@ -52,18 +61,30 @@ export function SideBarDesktop({ children }: SideBarDesktopProps) {
           <ul className="border-t flex flex-col p-3 flex-grow">{children}</ul>
         </SideBarContext.Provider>
         <div className=" border-t flex px-6 py-4 justify-start justify-items-end">
-          <img
+          {/* <img
             src="https://ui-avatars.com/api/?rounded=true"
             className="w-10 h-10 rounded-md"
-          />
+          /> */}
+          <div
+            className="flex w-10 h-10 rounded-md mr-2 items-center"
+            style={{ borderRadius: "5px", overflow: "hidden" }}
+          >
+            <Image
+              src="/logo-removebg-2.png"
+              alt="logoitk"
+              width={100}
+              height={100}
+            />
+          </div>
+
           <div
             className={`flex justify-between  items-center overflow-hidden transition-all ${
               expanded ? "w-32 ml-3" : "w-0 "
             }`}
           >
             <div className="flex flex-col justify-items-end leading-5">
-              <h4 className="font-semibold">Thiantun Intakan</h4>
-              <span className="text-xs text-black ">Administator</span>
+              <h4 className="font-semibold">{username?.toLocaleUpperCase()}</h4>
+              <span className="text-xs text-black ">General User</span>
             </div>
             <BsThreeDotsVertical size={20} />
           </div>

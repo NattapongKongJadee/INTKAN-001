@@ -90,3 +90,9 @@ aside {
     text-wrap: balance;
   }
 }
+
+@layer utilities {
+  input[type="file"]::-webkit-file-upload-text {
+    visibility: hidden;
+  }
+}
